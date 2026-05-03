@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contrast Finder — WCAG-compliant colors via OKLAB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #F2EEE5;
+  --paper-soft: #EBE6DA;
+  --ink: #1A1815;
+  --ink-mid: #4A453E;
+  --ink-soft: #847E73;
+  --rule: #C8C2B5;
+  --rule-soft: #DDD7C9;
+  --rust: #A8412B;
+  --rust-deep: #8A3422;
+  --moss: #4A6B3F;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+::selection { background: var(--ink); color: var(--paper); }
+
+html { background: var(--paper); }
+
+body {
+  font-family: 'Fraunces', Georgia, serif;
+  font-feature-settings: "ss01" 1, "liga" 1;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  color: var(--ink);
+  background: var(--paper);
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% 0%, rgba(168, 65, 43, 0.05), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 90% 100%, rgba(74, 107, 63, 0.04), transparent 60%);
+  min-height: 100vh;
+  padding: 4rem 2rem 6rem;
+  line-height: 1.5;
+}
+
+.container {
+  max-width: 1180px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* ==== HEADER ==== */
+.masthead {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 2rem;
+  padding-bottom: 2.5rem;
+  margin-bottom: 4rem;
+  border-bottom: 1px solid var(--ink);
+  position: relative;
+}
+
+.masthead::before {
+  content: "";
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--ink);
+}
+
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-mid);
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.eyebrow::before {
+  content: "";
+  width: 24px;
+  height: 1px;
+  background: var(--ink-mid);
+}
+
+.title {
+  font-family: 'Instrument Serif', serif;
+  font-size: clamp(3.5rem, 9vw, 7rem);
+  font-weight: 400;
+  line-height: 0.92;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.title em {
+  font-style: italic;
+  color: var(--rust);
+}
+
+.tagline {
+  font-family: 'Fraunces', serif;
+  font-weight: 300;
+  font-size: 1.05rem;
+  line-height: 1.4;
+  color: var(--ink-mid);
+  max-width: 28ch;
+  text-align: right;
+  font-style: italic;
+}
+
+/* ==== SECTION HEADERS ==== */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.section-num {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-size: 1.4rem;
+  color: var(--rust);
+}
+
+.section-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.section-rule {
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+/* ==== MAIN GRID ==== */
+.workspace {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 3rem;
+  margin-bottom: 4rem;
+}
+
+@media (max-width: 900px) {
+  .workspace {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+}
+
+/* ==== INPUTS ==== */
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.field-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-mid);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.field-label .hint {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 300;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.color-input-row {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+.color-swatch {
+  position: relative;
+  border: 1px solid var(--ink);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  overflow: hidden;
+}
+
+.color-swatch:hover {
+  transform: translateY(-1px);
+}
+
+.color-swatch input[type="color"] {
+  position: absolute;
+  inset: -4px;
+  width: calc(100% + 8px);
+  height: calc(100% + 8px);
+  border: none;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.color-swatch::after {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  opacity: 0.4;
+}
+
+.hex-input {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  padding: 0 0.9rem;
+  background: transparent;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  text-transform: uppercase;
+  outline: none;
+  transition: background 0.15s ease;
+}
+
+.hex-input:focus {
+  background: var(--paper-soft);
+}
+
+/* ==== THRESHOLD SELECTOR ==== */
+.threshold-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border: 1px solid var(--ink);
+}
+
+.threshold-option {
+  position: relative;
+  padding: 0.85rem 0.75rem;
+  cursor: pointer;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+  font-family: inherit;
+  color: var(--ink);
+  transition: background 0.15s ease;
+}
+
+.threshold-option:nth-child(2n) { border-right: none; }
+.threshold-option:nth-last-child(-n+2) { border-bottom: none; }
+
+.threshold-option:hover {
+  background: var(--paper-soft);
+}
+
+.threshold-option.active {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.threshold-ratio {
+  font-family: 'Instrument Serif', serif;
+  font-size: 1.6rem;
+  line-height: 1;
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.threshold-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+/* ==== PREVIEW ==== */
+.preview {
+  border: 1px solid var(--ink);
+  position: relative;
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 3rem;
+  transition: background 0.2s ease, color 0.2s ease;
+  overflow: hidden;
+}
+
+.preview-stamp {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.5;
+}
+
+.preview-display {
+  font-family: 'Instrument Serif', serif;
+  font-weight: 400;
+  font-size: clamp(2.4rem, 5vw, 3.6rem);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  margin-bottom: 1.5rem;
+}
+
+.preview-display em {
+  font-style: italic;
+}
+
+.preview-body {
+  font-family: 'Fraunces', serif;
+  font-weight: 400;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  margin-bottom: 1rem;
+  max-width: 50ch;
+}
+
+.preview-fine {
+  font-family: 'Fraunces', serif;
+  font-weight: 400;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  opacity: 0.95;
+  max-width: 60ch;
+}
+
+/* ==== RESULTS ==== */
+.results {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0;
+  border: 1px solid var(--ink);
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 700px) {
+  .results { grid-template-columns: 1fr; }
+}
+
+.result-card {
+  padding: 2rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.result-card.current {
+  border-right: 1px solid var(--ink);
+}
+
+@media (max-width: 700px) {
+  .result-card.current { border-right: none; border-bottom: 1px solid var(--ink); }
+}
+
+.result-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1.5rem;
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-size: 2rem;
+  color: var(--rust);
+  border-right: 1px solid var(--ink);
+}
+
+@media (max-width: 700px) {
+  .result-arrow {
+    border-right: none;
+    border-bottom: 1px solid var(--ink);
+    padding: 0.75rem;
+    font-size: 1.5rem;
+  }
+}
+
+.result-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-mid);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.result-swatch-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.result-swatch {
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--ink);
+  flex-shrink: 0;
+}
+
+.result-hex {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.25rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  user-select: all;
+  transition: color 0.15s ease;
+  position: relative;
+}
+
+.result-hex:hover { color: var(--rust); }
+
+.result-hex .copied {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 0.8rem;
+  letter-spacing: 0;
+  color: var(--moss);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+  text-transform: none;
+}
+
+.result-hex.was-copied .copied { opacity: 1; }
+
+.stat-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px dashed var(--rule);
+  align-items: baseline;
+}
+
+.stat-row:last-of-type { border-bottom: none; }
+
+.stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-mid);
+}
+
+.stat-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--ink);
+  text-align: right;
+}
+
+.stat-value.pass { color: var(--moss); }
+.stat-value.fail { color: var(--rust); }
+
+.stat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.15rem 0.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+}
+
+.stat-badge.pass { color: var(--moss); }
+.stat-badge.fail { color: var(--rust); }
+
+.stat-badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* ==== APPLY BUTTON ==== */
+.apply-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 5rem;
+  flex-wrap: wrap;
+}
+
+.apply-btn {
+  font-family: 'Fraunces', serif;
+  font-weight: 400;
+  font-size: 1.1rem;
+  padding: 0.85rem 1.75rem;
+  background: var(--ink);
+  color: var(--paper);
+  border: 1px solid var(--ink);
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.apply-btn:hover {
+  background: var(--rust);
+  border-color: var(--rust);
+}
+
+.apply-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.apply-btn:disabled:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.apply-btn em {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-size: 1.3rem;
+}
+
+.apply-note {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+  max-width: 32ch;
+}
+
+/* ==== EXPLAINER ==== */
+.notes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2.5rem;
+  padding: 3rem 0 0;
+  border-top: 1px solid var(--ink);
+}
+
+@media (max-width: 800px) {
+  .notes { grid-template-columns: 1fr; gap: 2rem; }
+}
+
+.note h3 {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.6rem;
+  margin-bottom: 0.6rem;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+.note h3 .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-style: normal;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  color: var(--rust);
+  display: block;
+  margin-bottom: 0.6rem;
+}
+
+.note p {
+  font-family: 'Fraunces', serif;
+  font-weight: 300;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--ink-mid);
+}
+
+.note p code {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  font-size: 0.85em;
+  color: var(--ink);
+  background: var(--paper-soft);
+  padding: 0.05em 0.3em;
+}
+
+/* ==== FOOTER ==== */
+.colophon {
+  margin-top: 5rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.colophon em {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-size: 0.95rem;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--rust);
+}
+
+/* hide native color picker styles */
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch { border: none; }
+
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ==== MASTHEAD ==== -->
+  <header class="masthead">
+    <div>
+      <div class="eyebrow">A WCAG / OKLAB utility</div>
+      <h1 class="title">Contrast<br><em>finder.</em></h1>
+    </div>
+    <p class="tagline">
+      Given a foreground and a background, the nearest accessible color &mdash; measured perceptually in OKLAB.
+    </p>
+  </header>
+
+  <!-- ==== WORKSPACE ==== -->
+  <div class="workspace">
+
+    <!-- INPUTS -->
+    <aside class="controls">
+
+      <div>
+        <div class="section-head">
+          <span class="section-num">i.</span>
+          <span class="section-title">Input</span>
+          <span class="section-rule"></span>
+        </div>
+
+        <div class="field" style="margin-bottom: 1.5rem;">
+          <label class="field-label" for="fg-hex">
+            <span>Foreground</span>
+            <span class="hint">your starting color</span>
+          </label>
+          <div class="color-input-row">
+            <div class="color-swatch" id="fg-swatch" style="background: #5A7B9D">
+              <input type="color" id="fg-color" value="#5A7B9D">
+            </div>
+            <input type="text" class="hex-input" id="fg-hex" value="#5A7B9D" maxlength="7" spellcheck="false">
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="bg-hex">
+            <span>Background</span>
+            <span class="hint">held constant</span>
+          </label>
+          <div class="color-input-row">
+            <div class="color-swatch" id="bg-swatch" style="background: #F2EEE5">
+              <input type="color" id="bg-color" value="#F2EEE5">
+            </div>
+            <input type="text" class="hex-input" id="bg-hex" value="#F2EEE5" maxlength="7" spellcheck="false">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-head">
+          <span class="section-num">ii.</span>
+          <span class="section-title">Target</span>
+          <span class="section-rule"></span>
+        </div>
+        <div class="threshold-grid" id="threshold-grid">
+          <button class="threshold-option" data-ratio="3">
+            <span class="threshold-ratio">3:1</span>
+            <span class="threshold-name">AA · Large</span>
+          </button>
+          <button class="threshold-option active" data-ratio="4.5">
+            <span class="threshold-ratio">4.5:1</span>
+            <span class="threshold-name">AA · Normal</span>
+          </button>
+          <button class="threshold-option" data-ratio="4.5" data-name="aaa-large">
+            <span class="threshold-ratio">4.5:1</span>
+            <span class="threshold-name">AAA · Large</span>
+          </button>
+          <button class="threshold-option" data-ratio="7">
+            <span class="threshold-ratio">7:1</span>
+            <span class="threshold-name">AAA · Normal</span>
+          </button>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- PREVIEW -->
+    <section>
+      <div class="section-head">
+        <span class="section-num">iii.</span>
+        <span class="section-title">Preview &mdash; using suggested color</span>
+        <span class="section-rule"></span>
+      </div>
+      <div class="preview" id="preview">
+        <div class="preview-stamp" id="preview-stamp">PREVIEW</div>
+        <h2 class="preview-display">The quick brown <em>fox</em> jumps.</h2>
+        <p class="preview-body">
+          Body copy at a regular reading size. Long-form content like articles, documentation, and product descriptions all sit in this size range &mdash; where contrast matters most for sustained reading.
+        </p>
+        <p class="preview-fine">
+          Fine print. Footnotes, captions, metadata, and other secondary text. WCAG&rsquo;s normal-text threshold (4.5:1) was set with text at this size in mind &mdash; and is the most commonly required level.
+        </p>
+      </div>
+    </section>
+  </div>
+
+  <!-- ==== RESULTS ==== -->
+  <div class="section-head">
+    <span class="section-num">iv.</span>
+    <span class="section-title">Result</span>
+    <span class="section-rule"></span>
+  </div>
+
+  <div class="results">
+    <div class="result-card current">
+      <div class="result-eyebrow">
+        <span>Original foreground</span>
+      </div>
+      <div class="result-swatch-row">
+        <div class="result-swatch" id="orig-swatch"></div>
+        <div class="result-hex" id="orig-hex" data-copy>
+          #5A7B9D
+          <span class="copied">copied to clipboard</span>
+        </div>
+      </div>
+      <div>
+        <div class="stat-row">
+          <span class="stat-label">Contrast ratio</span>
+          <span class="stat-value" id="orig-contrast">3.20:1</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">WCAG status</span>
+          <span class="stat-value">
+            <span class="stat-badge fail" id="orig-badge">Fails</span>
+          </span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">OKLAB · L a b</span>
+          <span class="stat-value" id="orig-oklab">— — —</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-arrow">→</div>
+
+    <div class="result-card suggested">
+      <div class="result-eyebrow">
+        <span>Nearest compliant in OKLAB</span>
+      </div>
+      <div class="result-swatch-row">
+        <div class="result-swatch" id="sug-swatch"></div>
+        <div class="result-hex" id="sug-hex" data-copy>
+          #4A6B8D
+          <span class="copied">copied to clipboard</span>
+        </div>
+      </div>
+      <div>
+        <div class="stat-row">
+          <span class="stat-label">Contrast ratio</span>
+          <span class="stat-value pass" id="sug-contrast">4.51:1</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">WCAG status</span>
+          <span class="stat-value">
+            <span class="stat-badge pass" id="sug-badge">Passes</span>
+          </span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">ΔE OKLAB</span>
+          <span class="stat-value" id="sug-delta">0.052</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="apply-row">
+    <button class="apply-btn" id="apply-btn">
+      Apply suggested color <em>↗</em>
+    </button>
+    <p class="apply-note" id="apply-note">
+      Replaces your foreground with the nearest compliant color above.
+    </p>
+  </div>
+
+  <!-- ==== EXPLAINER ==== -->
+  <section class="notes">
+    <div class="note">
+      <h3><span class="num">on WCAG</span>What &ldquo;compliant&rdquo; means.</h3>
+      <p>
+        WCAG defines minimum contrast ratios between text and its background. <code>4.5:1</code> is the standard for normal body text (AA), <code>3:1</code> covers large or bold text and UI components, and <code>7:1</code> is the stricter AAA target.
+      </p>
+    </div>
+    <div class="note">
+      <h3><span class="num">on OKLAB</span>Why this color space.</h3>
+      <p>
+        OKLAB is perceptually uniform &mdash; equal numerical distances correspond to roughly equal visual distances. Searching here, rather than in raw RGB, finds a substitute that <em>looks</em> close to your original, not just one that&rsquo;s mathematically near in the wrong space.
+      </p>
+    </div>
+    <div class="note">
+      <h3><span class="num">on the search</span>How a match is found.</h3>
+      <p>
+        A two-pass search across the sRGB cube: a coarse sweep filters for colors meeting your contrast target, then a fine pass refines the winner. The result is the smallest perceptual jump that still passes.
+      </p>
+    </div>
+  </section>
+
+  <footer class="colophon">
+    <span>Contrast finder &mdash; <em>a small instrument.</em></span>
+    <span>sRGB · OKLAB · WCAG 2.1</span>
+  </footer>
+
+</div>
+
+<script>
+// ====== COLOR MATH ======
+
+function hexToRgb(hex) {
+  hex = hex.replace('#', '').trim();
+  if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+  if (hex.length !== 6 || !/^[0-9a-fA-F]{6}$/.test(hex)) return null;
+  return [
+    parseInt(hex.slice(0, 2), 16),
+    parseInt(hex.slice(2, 4), 16),
+    parseInt(hex.slice(4, 6), 16),
+  ];
+}
+
+function rgbToHex([r, g, b]) {
+  const h = n => n.toString(16).padStart(2, '0');
+  return ('#' + h(r) + h(g) + h(b)).toUpperCase();
+}
+
+// ---- WCAG luminance and contrast ----
+function srgbChannelToLinear(c) {
+  c /= 255;
+  return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+
+function relativeLuminance([r, g, b]) {
+  return 0.2126 * srgbChannelToLinear(r) +
+         0.7152 * srgbChannelToLinear(g) +
+         0.0722 * srgbChannelToLinear(b);
+}
+
+function contrastRatio(rgb1, rgb2) {
+  const l1 = relativeLuminance(rgb1);
+  const l2 = relativeLuminance(rgb2);
+  const lo = Math.min(l1, l2);
+  const hi = Math.max(l1, l2);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+// ---- OKLAB (Björn Ottosson) ----
+function srgbToLinear(c) {
+  c /= 255;
+  return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+function linearToSrgb(c) {
+  c = Math.max(0, Math.min(1, c));
+  const v = c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+  return Math.round(v * 255);
+}
+
+function rgbToOklab([r, g, b]) {
+  const lr = srgbToLinear(r);
+  const lg = srgbToLinear(g);
+  const lb = srgbToLinear(b);
+
+  const l = 0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb;
+  const m = 0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb;
+  const s = 0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb;
+
+  const l_ = Math.cbrt(l);
+  const m_ = Math.cbrt(m);
+  const s_ = Math.cbrt(s);
+
+  return [
+    0.2104542553 * l_ + 0.7936177850 * m_ - 0.0040720468 * s_,
+    1.9779984951 * l_ - 2.4285922050 * m_ + 0.4505937099 * s_,
+    0.0259040371 * l_ + 0.7827717662 * m_ - 0.8086757660 * s_,
+  ];
+}
+
+function oklabToRgb([L, a, b]) {
+  const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
+  const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
+  const s_ = L - 0.0894841775 * a - 1.2914855480 * b;
+
+  const l = l_ * l_ * l_;
+  const m = m_ * m_ * m_;
+  const s = s_ * s_ * s_;
+
+  const lr =  4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
+  const lg = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
+  const lb = -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s;
+
+  return [linearToSrgb(lr), linearToSrgb(lg), linearToSrgb(lb)];
+}
+
+function oklabDistance(a, b) {
+  return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+}
+
+// ====== SEARCH ALGORITHM ======
+// Hierarchical grid search over the sRGB cube.
+// 1) Coarse pass (step 8): scan ~33k points, keep the OKLAB-closest that passes.
+// 2) Fine pass (step 1) in a ±8 box around the winner: pixel-precise refinement.
+
+function findClosestCompliant(fgRgb, bgRgb, threshold) {
+  const fgLab = rgbToOklab(fgRgb);
+  const fgContrast = contrastRatio(fgRgb, bgRgb);
+
+  if (fgContrast >= threshold) {
+    return {
+      rgb: [...fgRgb],
+      oklab: fgLab,
+      distance: 0,
+      contrast: fgContrast,
+      alreadyCompliant: true,
+    };
+  }
+
+  let best = null;
+  const STEP = 8;
+
+  // Coarse pass
+  for (let r = 0; r <= 255; r += STEP) {
+    for (let g = 0; g <= 255; g += STEP) {
+      for (let b = 0; b <= 255; b += STEP) {
+        if (contrastRatio([r, g, b], bgRgb) >= threshold) {
+          const lab = rgbToOklab([r, g, b]);
+          const d = oklabDistance(lab, fgLab);
+          if (!best || d < best.distance) {
+            best = { rgb: [r, g, b], oklab: lab, distance: d };
+          }
+        }
+      }
+    }
+  }
+
+  // Also explicitly check pure black and pure white
+  for (const candidate of [[0, 0, 0], [255, 255, 255]]) {
+    if (contrastRatio(candidate, bgRgb) >= threshold) {
+      const lab = rgbToOklab(candidate);
+      const d = oklabDistance(lab, fgLab);
+      if (!best || d < best.distance) {
+        best = { rgb: candidate, oklab: lab, distance: d };
+      }
+    }
+  }
+
+  if (!best) {
+    return { rgb: null, oklab: null, distance: Infinity, contrast: 0, impossible: true };
+  }
+
+  // Fine pass: scan ±STEP around the best at unit resolution
+  const [r0, g0, b0] = best.rgb;
+  const lo = (v) => Math.max(0, v - STEP);
+  const hi = (v) => Math.min(255, v + STEP);
+
+  for (let r = lo(r0); r <= hi(r0); r++) {
+    for (let g = lo(g0); g <= hi(g0); g++) {
+      for (let b = lo(b0); b <= hi(b0); b++) {
+        if (contrastRatio([r, g, b], bgRgb) >= threshold) {
+          const lab = rgbToOklab([r, g, b]);
+          const d = oklabDistance(lab, fgLab);
+          if (d < best.distance) {
+            best = { rgb: [r, g, b], oklab: lab, distance: d };
+          }
+        }
+      }
+    }
+  }
+
+  best.contrast = contrastRatio(best.rgb, bgRgb);
+  return best;
+}
+
+// ====== UI WIRING ======
+
+const fgColor = document.getElementById('fg-color');
+const bgColor = document.getElementById('bg-color');
+const fgHex = document.getElementById('fg-hex');
+const bgHex = document.getElementById('bg-hex');
+const fgSwatch = document.getElementById('fg-swatch');
+const bgSwatch = document.getElementById('bg-swatch');
+const thresholdGrid = document.getElementById('threshold-grid');
+const preview = document.getElementById('preview');
+const previewStamp = document.getElementById('preview-stamp');
+const origSwatch = document.getElementById('orig-swatch');
+const sugSwatch = document.getElementById('sug-swatch');
+const origHexEl = document.getElementById('orig-hex');
+const sugHexEl = document.getElementById('sug-hex');
+const origContrast = document.getElementById('orig-contrast');
+const sugContrast = document.getElementById('sug-contrast');
+const origBadge = document.getElementById('orig-badge');
+const sugBadge = document.getElementById('sug-badge');
+const origOklab = document.getElementById('orig-oklab');
+const sugDelta = document.getElementById('sug-delta');
+const applyBtn = document.getElementById('apply-btn');
+const applyNote = document.getElementById('apply-note');
+
+let state = {
+  fg: [90, 123, 157],
+  bg: [242, 238, 229],
+  threshold: 4.5,
+  thresholdLabel: 'AA · Normal',
+  suggested: null,
+};
+
+function fmtNum(n, d = 3) {
+  return Number(n).toFixed(d);
+}
+
+function setSwatch(el, rgb) {
+  el.style.background = rgbToHex(rgb);
+}
+
+function update() {
+  const origC = contrastRatio(state.fg, state.bg);
+  const result = findClosestCompliant(state.fg, state.bg, state.threshold);
+  state.suggested = result;
+
+  // ----- Original side -----
+  const origHex = rgbToHex(state.fg);
+  const origLab = rgbToOklab(state.fg);
+  setSwatch(origSwatch, state.fg);
+  origHexEl.firstChild.nodeValue = origHex + ' ';
+  origContrast.textContent = fmtNum(origC, 2) + ':1';
+  origContrast.className = 'stat-value ' + (origC >= state.threshold ? 'pass' : 'fail');
+  origBadge.textContent = origC >= state.threshold ? 'Passes' : 'Fails';
+  origBadge.className = 'stat-badge ' + (origC >= state.threshold ? 'pass' : 'fail');
+  origOklab.textContent = `${fmtNum(origLab[0])} · ${fmtNum(origLab[1])} · ${fmtNum(origLab[2])}`;
+
+  // ----- Suggested side -----
+  if (result.impossible) {
+    sugSwatch.style.background = 'transparent';
+    sugSwatch.style.backgroundImage = 'repeating-linear-gradient(45deg, var(--rule) 0 6px, transparent 6px 12px)';
+    sugHexEl.firstChild.nodeValue = '— — —  ';
+    sugContrast.textContent = 'n/a';
+    sugContrast.className = 'stat-value fail';
+    sugBadge.textContent = 'Impossible';
+    sugBadge.className = 'stat-badge fail';
+    sugDelta.textContent = '∞';
+    applyBtn.disabled = true;
+    applyNote.innerHTML = '<em>No color in sRGB meets this contrast against your background.</em> Try lowering the threshold or changing the background.';
+
+    // Preview falls back to original
+    preview.style.background = rgbToHex(state.bg);
+    preview.style.color = rgbToHex(state.fg);
+    previewStamp.textContent = 'PREVIEW · UNCHANGED';
+    previewStamp.style.color = rgbToHex(state.fg);
+
+  } else if (result.alreadyCompliant) {
+    sugSwatch.style.backgroundImage = 'none';
+    setSwatch(sugSwatch, result.rgb);
+    sugHexEl.firstChild.nodeValue = rgbToHex(result.rgb) + ' ';
+    sugContrast.textContent = fmtNum(result.contrast, 2) + ':1';
+    sugContrast.className = 'stat-value pass';
+    sugBadge.textContent = 'Passes';
+    sugBadge.className = 'stat-badge pass';
+    sugDelta.textContent = '0.000';
+    applyBtn.disabled = true;
+    applyNote.innerHTML = '<em>Already compliant.</em> Your foreground meets the selected contrast target — no change needed.';
+
+    preview.style.background = rgbToHex(state.bg);
+    preview.style.color = rgbToHex(state.fg);
+    previewStamp.textContent = 'PREVIEW · ALREADY COMPLIANT';
+    previewStamp.style.color = rgbToHex(state.fg);
+
+  } else {
+    sugSwatch.style.backgroundImage = 'none';
+    setSwatch(sugSwatch, result.rgb);
+    sugHexEl.firstChild.nodeValue = rgbToHex(result.rgb) + ' ';
+    sugContrast.textContent = fmtNum(result.contrast, 2) + ':1';
+    sugContrast.className = 'stat-value pass';
+    sugBadge.textContent = 'Passes';
+    sugBadge.className = 'stat-badge pass';
+    sugDelta.textContent = fmtNum(result.distance, 3);
+    applyBtn.disabled = false;
+    applyNote.innerHTML = `Smallest perceptual move that satisfies <em>${state.thresholdLabel}</em> at <code style="font-family:'JetBrains Mono',monospace;font-size:0.85em">${fmtNum(state.threshold,1)}:1</code>.`;
+
+    preview.style.background = rgbToHex(state.bg);
+    preview.style.color = rgbToHex(result.rgb);
+    previewStamp.textContent = 'PREVIEW · WITH SUGGESTED COLOR';
+    previewStamp.style.color = rgbToHex(result.rgb);
+  }
+}
+
+// ----- Color input syncing -----
+function syncFgFromColor(value) {
+  const rgb = hexToRgb(value);
+  if (!rgb) return;
+  state.fg = rgb;
+  fgHex.value = value.toUpperCase();
+  fgSwatch.style.background = value;
+  update();
+}
+function syncBgFromColor(value) {
+  const rgb = hexToRgb(value);
+  if (!rgb) return;
+  state.bg = rgb;
+  bgHex.value = value.toUpperCase();
+  bgSwatch.style.background = value;
+  update();
+}
+
+fgColor.addEventListener('input', e => syncFgFromColor(e.target.value));
+bgColor.addEventListener('input', e => syncBgFromColor(e.target.value));
+
+fgHex.addEventListener('input', e => {
+  let v = e.target.value;
+  if (!v.startsWith('#')) { v = '#' + v; e.target.value = v; }
+  const rgb = hexToRgb(v);
+  if (rgb) {
+    state.fg = rgb;
+    fgColor.value = rgbToHex(rgb).toLowerCase();
+    fgSwatch.style.background = v;
+    update();
+  }
+});
+bgHex.addEventListener('input', e => {
+  let v = e.target.value;
+  if (!v.startsWith('#')) { v = '#' + v; e.target.value = v; }
+  const rgb = hexToRgb(v);
+  if (rgb) {
+    state.bg = rgb;
+    bgColor.value = rgbToHex(rgb).toLowerCase();
+    bgSwatch.style.background = v;
+    update();
+  }
+});
+
+// ----- Threshold buttons -----
+thresholdGrid.querySelectorAll('.threshold-option').forEach(btn => {
+  btn.addEventListener('click', () => {
+    thresholdGrid.querySelectorAll('.threshold-option').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.threshold = parseFloat(btn.dataset.ratio);
+    state.thresholdLabel = btn.querySelector('.threshold-name').textContent;
+    update();
+  });
+});
+
+// ----- Apply button -----
+applyBtn.addEventListener('click', () => {
+  if (!state.suggested || !state.suggested.rgb) return;
+  const hex = rgbToHex(state.suggested.rgb);
+  syncFgFromColor(hex);
+});
+
+// ----- Click hex to copy -----
+[origHexEl, sugHexEl].forEach(el => {
+  el.addEventListener('click', async () => {
+    const text = el.firstChild.nodeValue.trim();
+    if (!text || text.includes('—')) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      el.classList.add('was-copied');
+      setTimeout(() => el.classList.remove('was-copied'), 1400);
+    } catch (e) { /* ignore */ }
+  });
+});
+
+// Initial render
+update();
+
+</script>
+</body>
+</html>
